@@ -20,9 +20,20 @@ export function logMain(data: string): void {
   console.log(_prependTag(data, mainTag))
 }
 
-export function logDeploy(name: string, address: string): void {
-  const data = `${name}: https://rinkeby.etherscan.io/address/${address}`
-  console.log(_prependTag(data, deployTag))
+export function logDeploy(
+  contractId: string,
+  currentNetwork: string,
+  contractAddress: string
+): void {
+  console.log(_prependTag(`*** Deployed ${contractId} ***`, deployTag))
+  console.log(_prependTag(`Network: ${currentNetwork}`, deployTag))
+  console.log(_prependTag(`Address: ${contractAddress}`, deployTag))
+
+  const url = `https://${
+    currentNetwork === 'main' ? '' : currentNetwork + '.'
+  }etherscan.io/address/${contractAddress}`
+
+  console.log(_prependTag(`Url: ${url}`, deployTag))
 }
 
 export function logAction(data: string): void {

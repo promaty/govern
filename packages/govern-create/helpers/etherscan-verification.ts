@@ -24,7 +24,7 @@ function delay(ms: number) {
 export const verifyContract = async (
   contractName: string,
   address: string,
-  constructorArguments: (string | string[])[],
+  constructorArguments: (string | (string | string[])[])[],
   libraries?: string
 ) => {
   const currentNetwork = BRE.network.name
@@ -48,7 +48,7 @@ export const verifyContract = async (
     )
     const msDelay = 3000
     const times = 30
-    // Write a temporal file to host complex parameters for buidler-etherscan https://github.com/nomiclabs/buidler/tree/development/packages/buidler-etherscan#complex-arguments
+    // Write a temporal file to host complex parameters for hardhat-etherscan https://github.com/nomiclabs/hardhat/tree/development/packages/hardhat-etherscan#complex-arguments
     const { fd, path, cleanup } = await file({
       prefix: 'verify-params-',
       postfix: '.js',
@@ -97,19 +97,8 @@ export const runTaskWithRetry = async (
 }
 
 export const checkVerification = () => {
-  const currentNetwork = BRE.network.name
   if (!process.env.ETHERSCAN_KEY) {
     console.error('Missing process.env.ETHERSCAN_KEY.')
     exit(3)
-  }
-  if (!process.env.ETHERSCAN_NETWORK) {
-    console.error('Missing process.env.ETHERSCAN_NETWORK')
-    exit(4)
-  }
-  if (!SUPPORTED_ETHERSCAN_NETWORKS.includes(currentNetwork)) {
-    console.error(
-      `Current network ${currentNetwork} not supported. Please change to one of the next networks: ${SUPPORTED_ETHERSCAN_NETWORKS.toString()}`
-    )
-    exit(5)
   }
 }

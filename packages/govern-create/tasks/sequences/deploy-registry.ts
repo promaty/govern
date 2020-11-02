@@ -1,4 +1,4 @@
-import { task } from '@nomiclabs/buidler/config'
+import { task } from 'hardhat/config'
 import { registerContractInJsonDb } from '../../helpers/artifactsDb'
 import { deployGoverRegistry } from '../../helpers/delploys'
 import { setBRE } from '../../helpers/helpers'

@@ -13,10 +13,7 @@ export const registerContractInJsonDb = async (
   contractInstance: Contract
 ) => {
   const currentNetwork = BRE.network.name
-  if (
-    currentNetwork !== 'buidlerevm' &&
-    currentNetwork !== 'soliditycoverage'
-  ) {
+  if (currentNetwork !== 'hardhat' && currentNetwork !== 'soliditycoverage') {
     logDeploy(contractId, currentNetwork, contractInstance.address)
   }
 

@@ -1,47 +1,40 @@
-import { task } from '@nomiclabs/buidler/config'
-import { writeFileSync } from 'fs'
-import { deployContract } from '../../helpers/helpers'
-import { logDeploy } from '../../helpers/logger'
-import { GovernFactory, Govern } from '../../typechain'
+import { task } from 'hardhat/config'
+import { getGovernRegistry, setBRE } from '../../helpers/helpers'
+import {
+  deployGoverBaseFactory,
+  deployGoverFactory,
+  deployGoverQueueFactory,
+  deployGoverTokenFactory,
+} from '../../helpers/delploys'
+import { Address, eContractid } from '../../helpers/types'
+import { registerContractInJsonDb } from '../../helpers/artifactsDb'
 
-const FACTORY_CACHE_NAME = 'govern-factory-rinkeby'
+const { GovernBaseFactory } = eContractid
 
 task('deploy-factory', 'Deploys an GovernBaseFactory instance')
+  .addOptionalParam('registry', 'GovernRegistry address')
   .addFlag('verify', 'Verify the contracts via Etherscan API')
-  .setAction(async ({ verify }, BRE) => {
-    setBRE(BRE)
-    await deployContract<GovernFactory>('GovernFactory', [])
-    deployContract('GovernQueueFactory')
+  .setAction(
+    async (
+      { registry, verify }: { registry: Address; verify: boolean },
+      BRE
+    ) => {
+      setBRE(BRE)
 
-    const GovernFactory = await ethers.getContractFactory('GovernFactory')
-    const GovernQueueFactory = await ethers.getContractFactory(
-      'GovernQueueFactory'
-    )
-    const GovernTokenFactory = await ethers.getContractFactory(
-      'GovernTokenFactory'
-    )
-    const GovernBaseFactory = await ethers.getContractFactory(
-      'GovernBaseFactory'
-    )
+      const governFactory = await deployGoverFactory(verify)
+      const queueFactory = await deployGoverQueueFactory(verify)
+      const tokenFactory = await deployGoverTokenFactory(verify)
 
-    const governFactory = await GovernFactory.deploy()
-    logDeploy('GovernFactory', governFactory.address)
+      const baseFactory = await deployGoverBaseFactory(
+        [
+          registry ?? (await getGovernRegistry()).address,
+          governFactory.address,
+          queueFactory.address,
+          tokenFactory.address,
+        ],
+        verify
+      )
 
-    const queueFactory = await GovernQueueFactory.deploy()
-    logDeploy('GovernQueueFactory', queueFactory.address)
-
-    const tokenFactory = await GovernTokenFactory.deploy()
-    logDeploy('GovernTokenFactory', tokenFactory.address)
-
-    const governBaseFactory = await GovernBaseFactory.deploy(
-      process.env.REGISTRY_RINKEBY,
-      governFactory.address,
-      queueFactory.address,
-      tokenFactory.address
-    )
-    logDeploy('GovernBaseFactory', governBaseFactory.address)
-
-    if (process.env.CD) {
-      writeFileSync(FACTORY_CACHE_NAME, governBaseFactory.address)
+      await registerContractInJsonDb(GovernBaseFactory, baseFactory)
     }
-  })
+  )

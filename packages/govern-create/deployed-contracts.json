@@ -1,1 +1,8 @@
-{}
+{
+  "GovernRegistry": {
+    "rinkeby": {
+      "address": "0x12B48a755510B03ECD7C4efb6f2a6DC367d8C26d",
+      "deployer": "0x1111a5F9DECc25927037dE55d2013D7aD30f1Af0"
+    }
+  }
+}

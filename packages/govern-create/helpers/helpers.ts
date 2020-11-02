@@ -1,14 +1,22 @@
-import { BuidlerRuntimeEnvironment } from '@nomiclabs/buidler/types'
+import { HardhatRuntimeEnvironment } from 'hardhat/types'
+import {
+  uniqueNamesGenerator,
+  adjectives,
+  colors,
+  animals,
+} from 'unique-names-generator'
 import { Contract, Signer } from 'ethers'
 import { promises } from 'fs'
-import { Address } from './types'
+import { Address, eContractid } from './types'
+import { getDb } from './artifactsDb'
+import { GovernBaseFactory, GovernRegistry } from '../typechain'
 
 export const writeObjectToFile = async (path: string, obj: object) =>
   await promises.writeFile(path, JSON.stringify(obj))
 
-// Buidler Runtime Environment
-export let BRE: BuidlerRuntimeEnvironment = {} as BuidlerRuntimeEnvironment
-export const setBRE = (_BRE: BuidlerRuntimeEnvironment) => {
+// Hardhat Runtime Environment
+export let BRE: HardhatRuntimeEnvironment = {} as HardhatRuntimeEnvironment
+export const setBRE = (_BRE: HardhatRuntimeEnvironment) => {
   BRE = _BRE
 }
 
@@ -30,9 +38,44 @@ export const deployContract = async <ContractType extends Contract>(
 
 export const getContract = async <ContractType extends Contract>(
   contractName: string,
-  contractAddress: string,
-  address: string
+  contractAddress: string
 ): Promise<ContractType> =>
   (await (await BRE.ethers.getContractAt(contractName, contractAddress)).attach(
-    address
+    contractAddress
   )) as ContractType
+
+export const getGovernRegistry = async () => {
+  const addressDeployed = (
+    await getDb()
+      .get(`${eContractid.GovernRegistry}.${BRE.network.name}`)
+      .value()
+  ).address
+  return await getContract<GovernRegistry>(
+    eContractid.GovernRegistry,
+    addressDeployed
+  )
+}
+
+export const getGovernBaseFactory = async () => {
+  const addressDeployed = (
+    await getDb()
+      .get(`${eContractid.GovernBaseFactory}.${BRE.network.name}`)
+      .value()
+  ).address
+  return await getContract<GovernBaseFactory>(
+    eContractid.GovernBaseFactory,
+    addressDeployed
+  )
+}
+
+export const buildName = (name: string | null): string => {
+  const uniqueName =
+    name ??
+    uniqueNamesGenerator({
+      dictionaries: [adjectives, colors, animals],
+      length: 2,
+      separator: '-',
+    })
+
+  return process.env.CD ? `github-${uniqueName}` : uniqueName
+}

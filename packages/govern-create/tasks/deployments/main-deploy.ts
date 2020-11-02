@@ -1,4 +1,4 @@
-import { task } from '@nomiclabs/buidler/config'
+import { task } from 'hardhat/config'
 import { checkVerification } from '../../helpers/etherscan-verification'
 import { setBRE, BRE } from '../../helpers/helpers'
 import { logMain } from '../../helpers/logger'

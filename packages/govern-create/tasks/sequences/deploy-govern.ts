@@ -1,62 +1,53 @@
-import { task } from '@nomiclabs/buidler/config'
-import { readFileSync } from 'fs'
+import { task } from 'hardhat/config'
+import { verifyContract } from '../../helpers/etherscan-verification'
 import {
-  uniqueNamesGenerator,
-  adjectives,
-  colors,
-  animals,
-} from 'unique-names-generator'
-import { logMain } from '../../helpers/logger'
+  buildName,
+  getContract,
+  getGovernBaseFactory,
+  getGovernRegistry,
+  setBRE,
+} from '../../helpers/helpers'
+import { logDeploy, logMain } from '../../helpers/logger'
+import { eContractid } from '../../helpers/types'
+import { GovernBaseFactory } from '../../typechain'
 
-const FACTORY_CACHE_NAME = 'govern-factory-rinkeby'
-const REGISTER_EVENT_NAME = 'Registered'
-const REGISTRY_EVENTS_ABI = [
-  'event Registered(address indexed dao, address queue, address indexed registrant, string name)',
-  'event SetMetadata(address indexed dao, bytes metadata)',
-]
+const { Govern, Queue } = eContractid
 
-task('deploy-govern', 'Deploys an Govern from provided factory')
-  .addOptionalParam('factory', 'Factory address')
+const ZERO_ADDR = '0x0000000000000000000000000000000000000000'
+
+task('deploy-govern', 'Deploys a Govern instance')
+  .addOptionalParam('factory', 'GovernBaseFactory address')
   .addOptionalParam('useProxies', 'Whether to deploy govern with proxies')
-  .addOptionalParam('name', 'DAO name (must be unique at Registry level)')
+  .addOptionalParam('name', 'DAO name (must be unique at GovernRegistry level)')
+  .addFlag('verify', 'Verify the contracts via Etherscan API')
   .setAction(
     async (
       {
-        factory: factoryAddr,
+        factory,
         useProxies = true,
         name,
+        verify,
         token = `0x${'00'.repeat(20)}`,
         tokenName = name,
         tokenSymbol = 'GOV',
       },
-      { ethers }
+      BRE
     ) => {
-      factoryAddr =
-        factoryAddr ||
-        process.env.FACTORY_RINKEBY ||
-        readFileSync(FACTORY_CACHE_NAME).toString()
-      name =
-        name ||
-        uniqueNamesGenerator({
-          dictionaries: [adjectives, colors, animals],
-          length: 2,
-          separator: '-',
-        })
-      name = process.env.CD ? `github-${name}` : name
+      setBRE(BRE)
 
-      if (!factoryAddr) {
-        return console.error(
-          'Please provide factory address as --factory [addr] or add as FACTORY_[NETWORK] to your environment'
-        )
-      }
+      const { keccak256, solidityPack } = BRE.ethers.utils
 
-      let registryInterface = new ethers.utils.Interface(REGISTRY_EVENTS_ABI)
+      name = buildName(name)
 
-      const governBaseFactory = await ethers.getContractAt(
-        'GovernBaseFactory',
-        factoryAddr
-      )
-      const tx = await governBaseFactory.newGovernWithoutConfig(
+      const registry = await getGovernRegistry()
+      const baseFactory = factory
+        ? await getContract<GovernBaseFactory>(
+            eContractid.GovernBaseFactory,
+            factory
+          )
+        : await getGovernBaseFactory()
+
+      const tx = await baseFactory.newGovernWithoutConfig(
         name,
         token,
         tokenName || name,
@@ -67,18 +58,37 @@ task('deploy-govern', 'Deploys an Govern from provided factory')
           gasPrice: 2e9,
         }
       )
+      tx.wait()
 
-      const { events } = await tx.wait()
+      const topics =
+        registry.filters.Registered(null, null, null, baseFactory.address, null)
+          .topics ?? []
 
-      const {
-        args: { dao, queue },
-      } = events
-        .filter(({ address }) => address === process.env.REGISTRY_RINKEBY)
-        .map((log) => registryInterface.parseLog(log))
-        .find(({ name }) => name === REGISTER_EVENT_NAME)
+      const queueAddress = topics[1] as string
+      const governAddress = topics[0] as string
 
-      console.log(`----\nA wild new Govern named *${name}* appeared 🦅`)
-      print({ address: dao }, 'Govern')
-      print({ address: queue }, 'Queue')
+      logMain(`----\nA wild new Govern named *${name}* appeared 🦅`)
+      logDeploy(eContractid.Queue, BRE.network.name, queueAddress)
+      logDeploy(eContractid.Govern, BRE.network.name, governAddress)
+
+      if (verify) {
+        const salt = useProxies
+          ? keccak256(solidityPack(['string'], [name]))
+          : '0x0'
+
+        const config = [
+          '0',
+          [ZERO_ADDR, '0'],
+          [ZERO_ADDR, '0'],
+          ZERO_ADDR,
+          '0x',
+        ]
+
+        const queueArgs = [baseFactory.address, config, salt]
+        const governArgs = [queueAddress, salt]
+
+        await verifyContract(Queue, queueAddress, queueArgs)
+        await verifyContract(Govern, governAddress, governArgs)
+      }
     }
   )

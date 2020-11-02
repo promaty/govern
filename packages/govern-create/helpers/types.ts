@@ -3,7 +3,7 @@ export type Address = string
 export enum eEthereumNetwork {
   rinkeby = 'rinkeby',
   main = 'main',
-  buidlerevm = 'buidlerevm',
+  hardhat = 'hardhat',
 }
 
 export enum eContractid {
