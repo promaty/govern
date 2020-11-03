@@ -6,16 +6,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - run: docker login docker.pkg.github.com -u $GITHUB_ACTOR -p ${{secrets.GITHUB_TOKEN}}
-    - run: .github/scripts/docker-build.sh . docker.pkg.github.com/promaty/govern/test $GITHUB_SHA
+    - run: docker login ghcr.io -u promaty -p ${{secrets.CONTAINER_REGISTRY_TOKEN}}
+    - run: .github/scripts/docker-build.sh . ghcr.io/promaty/govern $GITHUB_SHA
 
   coverage:
     runs-on: ubuntu-latest
     container:
-      image: docker.pkg.github.com/promaty/govern/test:${{github.sha}}
+      image: ghcr.io/promaty/govern:${{github.sha}}
       credentials:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        username: promaty
+        password: ${{ secrets.CONTAINER_REGISTRY_TOKEN }}
     needs: build
     steps:
     - name: Run coverage
