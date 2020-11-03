@@ -15,9 +15,9 @@ jobs:
     needs: build
     steps:
     - name: Run coverage
-      run: yarn coverage
+      run: cd /app && yarn coverage
     - name: Upload report
-      run: bash <(curl -s https://codecov.io/bash)
+      run: cd /app && bash <(curl -s https://codecov.io/bash)
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -33,10 +33,10 @@ jobs:
   #   steps:
     
   #   - name: Deploy Factory
-  #     run: cd packages/govern-create && yarn deploy-factory --network rinkeby
+  #     run: cd /app/packages/govern-create && yarn deploy-factory --network rinkeby
 
   #   - name: Deploy Govern
-  #     run: cd packages/govern-create && yarn deploy-govern --network rinkeby > github-message
+  #     run: cd /app/packages/govern-create && yarn deploy-govern --network rinkeby > github-message
 
   #   - name: Log
-  #     run: cat packages/govern-create/github-message
+  #     run: cat /app/packages/govern-create/github-message
