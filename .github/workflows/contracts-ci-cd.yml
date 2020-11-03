@@ -11,7 +11,11 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
-    container: docker.pkg.github.com/promaty/govern/test:${{github.sha}}
+    container:
+      image: docker.pkg.github.com/promaty/govern/test:${{github.sha}}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     needs: build
     steps:
     - name: Run coverage
