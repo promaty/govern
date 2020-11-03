@@ -1,6 +1,5 @@
 name: Contracts CI/CD
 on: push
-env:
 
 jobs:
   build:
