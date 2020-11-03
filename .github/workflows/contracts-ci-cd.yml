@@ -17,7 +17,7 @@ jobs:
     - name: Run coverage
       run: cd /app && yarn coverage
     - name: Upload report
-      run: cd /app && bash <(curl -s https://codecov.io/bash)
+      run: cd /app && curl -s https://codecov.io/bash | bash
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 

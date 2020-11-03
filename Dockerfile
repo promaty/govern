@@ -1,5 +1,5 @@
 FROM node:12.19.0-alpine
-RUN apk add --no-cache git bash
+RUN apk add --no-cache git bash curl
 
 WORKDIR /app
 
