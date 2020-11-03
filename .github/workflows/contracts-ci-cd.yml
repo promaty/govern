@@ -1,73 +1,45 @@
 name: Contracts CI/CD
 on: push
+env:
+  # This is a base repository and we use github refs to set the version of the container
+  DOCKER_REPO: aragon/govern
+
 jobs:
-  coverage:
+  build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
+    - run: docker login -u ${{secrets.DOCKERHUB_USER}} -p ${{secrets.DOCKERHUB_TOKEN}}
+    - run: .github/scripts/docker-build.sh . $REPO $GITHUB_SHA
 
-    - name: Install node
-      uses: actions/setup-node@v1
-      with:
-        node-version: 12
-
-    - name: Cache yarn modules
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/yarn/
-        key: yarn-${{ hashFiles('yarn.lock') }}
-        restore-keys: 
-          yarn-${{ hashFiles('yarn.lock') }}
-          yarn-
-
-    - name: Install dependencies
-      run: yarn install --frozen-lockfile
-
-    - name: Build contracts
-      run: yarn build:contracts
-
+  coverage:
+    runs-on: ubuntu-latest
+    container: ${{env.DOCKER_REPO}}:${{github.sha}}
+    needs: build
+    steps:
     - name: Run coverage
       run: yarn coverage
-
     - name: Upload report
       run: bash <(curl -s https://codecov.io/bash)
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  # deploy-rinkeby:
+  #   runs-on: ubuntu-latest
+  #   container: ${{env.DOCKER_REPO}}:${{github.sha}}
+  #   needs: coverage
+  #   env:
+  #     CD: true
+  #     ETH_KEY: ${{ secrets.ETH_KEY }}
+  #     ETHERSCAN_KEY: ${{ secrets.ETHERSCAN_KEY }}
+  #     REGISTRY_RINKEBY: "0x0cd3621EC403F26ad9F79c3d77B1dda1f8474c6f"
+  #   steps:
+    
+  #   - name: Deploy Factory
+  #     run: cd packages/govern-create && yarn deploy-factory --network rinkeby
 
-  deploy-rinkeby:
-    runs-on: ubuntu-latest
-    needs: coverage
-    env:
-      CD: true
-      ETH_KEY: ${{ secrets.ETH_KEY }}
-      ETHERSCAN_KEY: ${{ secrets.ETHERSCAN_KEY }}
-      REGISTRY_RINKEBY: "0x0cd3621EC403F26ad9F79c3d77B1dda1f8474c6f"
-    steps:
-    - uses: actions/checkout@v1
+  #   - name: Deploy Govern
+  #     run: cd packages/govern-create && yarn deploy-govern --network rinkeby > github-message
 
-    - name: Install node
-      uses: actions/setup-node@v1
-      with:
-        node-version: 12
-
-    - name: Cache yarn modules
-      uses: actions/cache@v2
-      with:
-        path: ~/.cache/yarn/
-        key: yarn-${{ hashFiles('yarn.lock') }}
-        restore-keys: |
-          yarn-${{ hashFiles('yarn.lock') }}
-          yarn-
-
-    - name: Install dependencies
-      run: yarn install --frozen-lockfile
-
-    # - name: Deploy Factory
-    #   run: cd packages/govern-create && yarn deploy-factory --network rinkeby
-
-    # - name: Deploy Govern
-    #   run: cd packages/govern-create && yarn deploy-govern --network rinkeby > github-message
-
-    # - name: Log
-    #   run: cat packages/govern-create/github-message
+  #   - name: Log
+  #     run: cat packages/govern-create/github-message
