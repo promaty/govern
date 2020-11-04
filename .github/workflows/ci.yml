@@ -8,7 +8,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-    - run: echo {{ github.ref }}
+    - run: echo ${{ github.ref }}
     # - uses: actions/checkout@v1
     # - name: Install node
     #   uses: actions/setup-node@v1
