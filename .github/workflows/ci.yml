@@ -8,18 +8,19 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - name: Install node
-      uses: actions/setup-node@v1
-      with:
-        node-version: 12
-    - name: Install dependencies
-      run: yarn install --frozen-lockfile
-    - name: Build contracts
-      run: yarn build:contracts
-    - name: Run coverage
-      run: yarn coverage
-    - name: Upload report
-      run: bash <(curl -s https://codecov.io/bash)
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    - run: echo {{ github.ref }}
+    # - uses: actions/checkout@v1
+    # - name: Install node
+    #   uses: actions/setup-node@v1
+    #   with:
+    #     node-version: 12
+    # - name: Install dependencies
+    #   run: yarn install --frozen-lockfile
+    # - name: Build contracts
+    #   run: yarn build:contracts
+    # - name: Run coverage
+    #   run: yarn coverage
+    # - name: Upload report
+    #   run: bash <(curl -s https://codecov.io/bash)
+    #   env:
+    #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
